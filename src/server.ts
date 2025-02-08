@@ -34,7 +34,7 @@ authenticate(app);
 routes(app);
 
 // Inicia o servidor
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || "3000");
 app.listen(PORT, () => {
   console.log(`Servidor rodando em ${PORT}`);
 });
