@@ -1,13 +1,18 @@
 import axios from "axios";
+import contexts from "./../contexts";
 
-async function chat(message: string) {
-  console.log("Iniciando gpt ", message);
+async function chat(message: string, context?: string) {
   try {
+    const messages = [{ role: "user", content: message }];
+    if (context) {
+      messages.push(...contexts[context]("gpt"));
+    }
+    console.log("Messages", messages);
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo-0125", // Use "gpt-3.5-turbo" se quiser uma opção mais barata
-        messages: [{ role: "user", content: message }],
+        model: process.env.OPENAI_MODEL,
+        messages,
       },
       {
         headers: {

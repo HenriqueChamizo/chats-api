@@ -5,7 +5,7 @@ import ias from "../modules/ias";
 export default (app: Application) => {
   app.post("/chat", async (req, res): Promise<any> => {
     try {
-      const { message, chat } = req.body;
+      const { message, chat, context } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "A mensagem é obrigatória!" });
@@ -18,8 +18,8 @@ export default (app: Application) => {
         return res.status(400).json({ error: "IA sem suporte!" });
       }
 
-      console.log("Mensagem recebida:", chat, message);
-      const response = await ias[chat](message);
+      console.log("Mensagem recebida:", chat, message, context);
+      const response = await ias[chat](message, context);
 
       res.json(response);
     } catch (error: any) {
