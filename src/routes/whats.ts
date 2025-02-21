@@ -3,8 +3,8 @@ import OpenAIService from "../services/openaiService";
 import TwilioService from "../services/twilioService";
 import { extractJson } from "../utils";
 import ChatSession from "../models/ChatSession";
-import ChatMessage from "../models/ChatMessage";
 import SqsService from "../services/sqsService";
+import AudioService from "../services/audioService";
 
 export default (app: Application) => {
   app.post("/whatsapp/send", async (req, res): Promise<any> => {
@@ -50,10 +50,16 @@ export default (app: Application) => {
   });
 
   app.post("/whatsapp/twiml", async (req, res) => {
-    const { From, Body: message } = req.body;
+    const {
+      From,
+      Body: message,
+      MediaContentType0: mediaType,
+      MediaUrl0: mediaUrl,
+    } = req.body;
     const match = From.match(/whatsapp:(\+\d+)/);
     const number = match && match.length ? match[1] : From;
-    console.log(`📲 Mensagem do WhatsApp de ${number}:`, message);
+
+    console.log(`📲 Mensagem do WhatsApp de ${number}:`, message || mediaUrl);
 
     try {
       let chatSession = await ChatSession.findOne({
@@ -66,6 +72,13 @@ export default (app: Application) => {
         return;
       }
 
+      let userMessage = message;
+
+      if (mediaType && mediaType.startsWith("audio")) {
+        const audioService = new AudioService();
+        userMessage = await audioService.processAudio(mediaUrl);
+      }
+
       const isSessionActive = chatSession && !chatSession.endTime;
       let openaiService: OpenAIService;
       if (isSessionActive) {
@@ -76,7 +89,7 @@ export default (app: Application) => {
       } else {
         console.log(`🆕 Criando nova sessão para ${number}`);
         openaiService = new OpenAIService();
-        await openaiService.createThreadWithHistory(number, message);
+        await openaiService.createThreadWithHistory(number, userMessage);
         chatSession = await ChatSession.findOne({ phoneNumber: number }).sort({
           _id: -1,
         });
@@ -88,7 +101,7 @@ export default (app: Application) => {
         return;
       }
 
-      if (isSessionActive) await openaiService.sendUserMessage(message);
+      if (isSessionActive) await openaiService.sendUserMessage(userMessage);
       if (!openaiService.getRunId()) await openaiService.createRun();
       console.log("⏳ Processando resposta...");
       await openaiService.checkRunStatus();

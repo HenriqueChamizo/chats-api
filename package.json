@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/speech": "^6.7.0",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
@@ -27,7 +28,8 @@
     "openai": "^4.85.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "twilio": "^5.4.4"
+    "twilio": "^5.4.4",
+    "whisper": "^0.3.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
