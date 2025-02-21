@@ -155,6 +155,7 @@ export default (app: Application) => {
       if (jsonExtracted.extracted) {
         const sqs = new SqsService();
         await sqs.sendMessage({
+          type: "conversationCall",
           result: jsonExtracted.json,
           phoneNumber: number,
           threadId: openaiService.getThreadId(),

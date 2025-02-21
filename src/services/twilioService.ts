@@ -54,6 +54,22 @@ class TwilioService {
     return callSession;
   }
 
+  async sendWhatsAppMessage(to: string, message: string) {
+    if (this.debug) {
+      console.log(`📩 Simulando envio de WhatsApp para ${to}:`, message);
+      return { sid: "debug-whatsapp-sid" };
+    }
+
+    const response = await this.client.messages.create({
+      body: message,
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      to: `whatsapp:${to}`,
+    });
+
+    console.log("📩 WhatsApp enviado:", response.sid);
+    return response;
+  }
+
   generateTwimlResponse(
     text: string,
     actionUrl: string,

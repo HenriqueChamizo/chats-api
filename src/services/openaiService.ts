@@ -43,6 +43,18 @@ class OpenAIService {
     this.sessionId = typeof _id === "string" ? _id : _id.toString();
   }
 
+  private async setSession(phoneNumber: string, content: string) {
+    const chatSession = await ChatSession.create({
+      phoneNumber,
+      topic: content,
+      threadId: this.threadId,
+      runIds: [],
+      startTime: new Date(),
+    });
+
+    this.setSessionId(chatSession);
+  }
+
   private async getSession() {
     if (!this.threadId) return;
     const session = await ChatSession.findOne({ threadId: this.threadId });
@@ -50,7 +62,7 @@ class OpenAIService {
     return session;
   }
 
-  async createThreadAndRun(phoneNumber: string, topic: any) {
+  private getContent(topic: any) {
     const topicContent = typeof topic === "string" ? { content: topic } : topic;
     const localContent = {
       nowDate: new Date().toISOString(),
@@ -58,10 +70,14 @@ class OpenAIService {
       language: "pt-BR",
     };
 
-    const content = JSON.stringify({
+    return JSON.stringify({
       ...topicContent,
       ...localContent,
     });
+  }
+
+  async createThreadAndRun(phoneNumber: string, topic: any) {
+    const content = this.getContent(topic);
 
     const thread = await this.openai.beta.threads.create();
     this.setThreadId(thread);
@@ -73,19 +89,70 @@ class OpenAIService {
 
     console.log("📝 Thread criada:", this.threadId);
 
-    const chatSession = await ChatSession.create({
-      phoneNumber,
-      topic: content,
-      threadId: this.threadId,
-      runIds: [],
-      startTime: new Date(),
-    });
-
-    this.setSessionId(chatSession);
+    this.setSession(phoneNumber, content);
 
     await this.createRun();
 
     return { content, sessionId: this.sessionId };
+  }
+
+  async createThreadWithHistory(phoneNumber: string, message: string) {
+    const chatSessions = await ChatSession.aggregate([
+      { $match: { phoneNumber } },
+      { $sort: { _id: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "chatmessages",
+          localField: "_id",
+          foreignField: "sessionId",
+          as: "messages",
+        },
+      },
+      { $unwind: "$messages" },
+      { $sort: { "messages._id": -1 } },
+      {
+        $group: {
+          _id: "$_id",
+          phoneNumber: { $first: "$phoneNumber" },
+          topic: { $first: "$topic" },
+          startTime: { $first: "$startTime" },
+          endTime: { $first: "$endTime" },
+          messages: { $push: "$messages" },
+        },
+      },
+      { $sort: { _id: -1 } },
+    ]);
+    console.log("📚 Histórico de conversas:", chatSessions);
+    const thread = await this.openai.beta.threads.create();
+    this.setThreadId(thread);
+
+    await Promise.all(
+      chatSessions.map(async (chatSession, index) => {
+        console.log(`📚 Conversa (${index}):`, chatSession);
+        await this.openai.beta.threads.messages.create(this.threadId, {
+          role: "user",
+          content: chatSession.topic,
+        });
+        const lastMessage = chatSession.messages[0];
+        await this.openai.beta.threads.messages.create(this.threadId, {
+          role: "assistant",
+          content: lastMessage.content,
+        });
+        return;
+      })
+    );
+    await this.openai.beta.threads.messages.create(this.threadId, {
+      role: "user",
+      content: message,
+    });
+
+    console.log("📝 Thread criada:", this.threadId);
+    this.setSession(phoneNumber, message);
+
+    await this.createRun();
+
+    return { content: message, sessionId: this.sessionId };
   }
 
   async createRun() {
