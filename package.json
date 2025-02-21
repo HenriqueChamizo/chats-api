@@ -4,6 +4,7 @@
   "scripts": {
     "start:dev": "nodemon src/server.ts",
     "start": "node dist/server.js",
+    "queue": "aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name gotask-call-finished",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
     "connect-mongo": "^5.1.0",
@@ -22,8 +24,10 @@
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
+    "openai": "^4.85.1",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "twilio": "^5.4.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

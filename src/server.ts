@@ -7,6 +7,8 @@ import database from "./modules/database";
 import authenticate from "./modules/auth";
 import routes from "./routes";
 
+import workers from "./workers";
+
 dotenv.config();
 const app = express();
 
@@ -38,3 +40,5 @@ const PORT = parseInt(process.env.PORT || "3000");
 app.listen(PORT, () => {
   console.log(`Servidor rodando em ${PORT}`);
 });
+
+workers();

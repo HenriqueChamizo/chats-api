@@ -8,7 +8,6 @@ export default (app: Application) => {
   // Inicializa o Passport e a sessão
   app.use(passport.initialize());
   app.use(passport.session());
-  console.log(">>>>>>> aqui: ", process.env);
   passport.use(
     new GoogleStrategy(
       {
