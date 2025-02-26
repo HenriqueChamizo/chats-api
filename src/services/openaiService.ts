@@ -157,7 +157,7 @@ class OpenAIService {
 
   async createRun() {
     const run = await this.openai.beta.threads.runs.create(this.threadId, {
-      assistant_id: process.env.OPENAI_ASSISTANT_ID!,
+      assistant_id: process.env.OPENAI_ASSISTANT_DIRECIONADOR_ID!,
     });
 
     this.setRunId(run);

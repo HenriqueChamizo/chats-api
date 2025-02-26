@@ -21,22 +21,23 @@ async function processQueue() {
           continue;
         }
 
-        console.log(
-          `📌 Processando chamada finalizada da fila: ${queueMessage.queueUrl}`
-        );
-
         try {
-          // Aqui entra o processamento da mensagem
+          await sqs.processedQueue(data);
 
-          await sqs.deleteMessage(message.ReceiptHandle!, message.MessageId!);
+          queueMessage &&
+            (await sqs.deleteMessage(
+              message.ReceiptHandle!,
+              message.MessageId!
+            ));
         } catch (error) {
           console.error("❌ Erro ao processar mensagem:", error);
 
-          await QueueMessage.findOneAndUpdate(
-            { messageId: message.MessageId },
-            { status: "failed" },
-            { new: true }
-          );
+          queueMessage &&
+            (await QueueMessage.findOneAndUpdate(
+              { messageId: message.MessageId },
+              { status: "failed" },
+              { new: true }
+            ));
         }
       }
     }
